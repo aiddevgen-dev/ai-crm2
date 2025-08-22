@@ -10,7 +10,8 @@ import {
   Calendar, 
   Mic, 
   BookOpen,
-  Building2
+  Building2,
+  Settings
 } from 'lucide-react';
 
 const navigation = [
@@ -19,6 +20,11 @@ const navigation = [
     href: '/dashboard',
     icon: LayoutDashboard,
   },
+  {
+  name: 'Manage Tenants',
+  href: '/manage-tenants',
+  icon: Settings,
+},
   {
     name: 'Campaigns',
     href: '/campaigns',
@@ -44,6 +50,7 @@ const navigation = [
     href: '/knowledge',
     icon: BookOpen,
   },
+
 ];
 
 export function Sidebar() {
