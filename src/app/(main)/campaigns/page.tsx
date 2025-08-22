@@ -8,7 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Megaphone, Users, TrendingUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
+const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? 'https://ai-crm2-backend2.onrender.com'
+  : 'http://127.0.0.1:5000';
 interface Campaign {
   _id: string;
   name: string;
@@ -33,7 +35,7 @@ export default function CampaignsPage() {
   const fetchCampaigns = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://127.0.0.1:5000/api/campaigns', {
+      const response = await fetch(`${API_BASE_URL}/api/campaigns`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -64,7 +66,7 @@ export default function CampaignsPage() {
     setIsCreating(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://127.0.0.1:5000/api/campaigns', {
+      const response = await fetch(`${API_BASE_URL}/api/campaigns`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

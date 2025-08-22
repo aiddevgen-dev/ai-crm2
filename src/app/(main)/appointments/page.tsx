@@ -18,7 +18,9 @@ interface Appointment {
   status: string;
   created_at: string;
 }
-
+const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? 'https://ai-crm2-backend2.onrender.com'
+  : 'http://127.0.0.1:5000';
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +40,7 @@ export default function AppointmentsPage() {
   const fetchAppointments = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://127.0.0.1:5000/api/appointments', {
+      const response = await fetch(`${API_BASE_URL}/api/appointments`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -69,7 +71,7 @@ export default function AppointmentsPage() {
     setIsCreating(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://127.0.0.1:5000/api/appointments', {
+      const response = await fetch(`${API_BASE_URL}/api/appointments`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

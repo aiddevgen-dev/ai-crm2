@@ -1,5 +1,7 @@
-const API_BASE_URL = 'http://127.0.0.1:5000';
-
+// const API_BASE_URL = 'http://127.0.0.1:5000';
+const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? 'https://ai-crm2-backend2.onrender.com'
+  : 'http://127.0.0.1:5000';
 interface LoginRequest {
   email: string;
   password: string;

@@ -19,7 +19,9 @@ interface Lead {
   created_at: string;
   campaign_id?: string;
 }
-
+const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? 'https://ai-crm2-backend2.onrender.com'
+  : 'http://127.0.0.1:5000';
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +37,7 @@ export default function LeadsPage() {
   const fetchLeads = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://127.0.0.1:5000/api/leads', {
+      const response = await fetch(`${API_BASE_URL}/api/leads`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -66,7 +68,7 @@ export default function LeadsPage() {
     setIsCreating(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://127.0.0.1:5000/api/leads', {
+      const response = await fetch(`${API_BASE_URL}/api/leads`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

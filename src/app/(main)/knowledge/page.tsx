@@ -18,6 +18,9 @@ interface Article {
   views: number;
   created_at: string;
 }
+const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? 'https://ai-crm2-backend2.onrender.com'
+  : 'http://127.0.0.1:5000';
 
 export default function KnowledgePage() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -38,7 +41,7 @@ export default function KnowledgePage() {
   const fetchArticles = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://127.0.0.1:5000/api/knowledge', {
+      const response = await fetch(`${API_BASE_URL}/api/knowledge`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -69,7 +72,7 @@ export default function KnowledgePage() {
     setIsCreating(true);
     try {
       const token = localStorage.getItem('auth_token');
-      const response = await fetch('http://127.0.0.1:5000/api/knowledge', {
+      const response = await fetch(`${API_BASE_URL}/api/knowledge`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
