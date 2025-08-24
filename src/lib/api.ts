@@ -7,6 +7,14 @@ interface LoginRequest {
   password: string;
 }
 
+interface TenantProfile {
+  tenant_id: string;
+  email: string;
+  name: string;
+  status: string;
+  created_at: string;
+  last_login?: string;
+}
 interface RegisterRequest {
   email: string;
   password: string;
@@ -166,24 +174,82 @@ class ApiClient {
   return response;
 }
 
-  async getCurrentUser(): Promise<ApiResponse<{ user: User }>> {
-    const token = this.getAuthToken();
+  // async getCurrentUser(): Promise<ApiResponse<{ user: User }>> {
+  //   const token = this.getAuthToken();
     
-    if (!token) {
-      return {
-        success: false,
-        error: 'No authentication token found',
-      };
-    }
+  //   if (!token) {
+  //     return {
+  //       success: false,
+  //       error: 'No authentication token found',
+  //     };
+  //   }
 
-    return this.makeRequest<{ user: User }>('/auth/me', {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  //   return this.makeRequest<{ user: User }>('/auth/me', {
+  //     method: 'GET',
+  //     headers: {
+  //       Authorization: `Bearer ${token}`,
+  //     },
+  //   });
+  // }
+
+  async getCurrentUser(): Promise<ApiResponse<{ user: User }>> {
+  const token = this.getAuthToken();
+  
+  if (!token) {
+    return {
+      success: false,
+      error: 'No authentication token found',
+    };
   }
 
+  try {
+    // Decode token to check type
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    
+    // Check if it's a tenant token
+    if (payload.type === 'tenant_access') {
+      // Use tenant endpoint
+      const response = await this.makeRequest<{ tenant: TenantProfile }>('/api/tenant-auth/profile', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (response.success && response.data?.tenant) {
+        // Transform tenant data to match User interface
+        const tenantData = response.data.tenant;
+        return {
+          success: true,
+          data: {
+            user: {
+              id: tenantData.tenant_id,
+              email: tenantData.email,
+              tenant_id: tenantData.tenant_id,
+              status: tenantData.status,
+              created_at: tenantData.created_at
+            }
+          }
+        };
+      }
+      
+      return { success: false, error: 'Failed to get tenant profile' };
+    } else {
+      // Regular admin token - use existing endpoint
+      return this.makeRequest<{ user: User }>('/auth/me', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: 'Failed to decode token',
+    };
+  }
+}
   async validateToken(): Promise<ApiResponse<{ valid: boolean; user_id?: string; tenant_id?: string }>> {
     const token = this.getAuthToken();
     
