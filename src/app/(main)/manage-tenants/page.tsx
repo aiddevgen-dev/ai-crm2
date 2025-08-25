@@ -30,6 +30,9 @@ export default function ManageTenantsPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({ email: '', name: '' }); // REMOVED password
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  // add new state
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   const { toast } = useToast();
 
   useEffect(() => {
@@ -108,34 +111,36 @@ export default function ManageTenantsPage() {
         body: JSON.stringify(formData),
       });
 
-      const result = await response.json();
+      const result = await response.json(); // read once
 
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Tenant created successfully with auto-generated password sent to email",
-        });
-        
-        setFormData({ email: '', name: '' }); // REMOVED password reset
-        setIsCreateOpen(false);
-        fetchTenants();
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: result.error || "Failed to create tenant",
-        });
-      }
-    } catch (error) {
+    if (response.ok) {
+      toast({
+        title: "Success",
+        description: "Tenant created successfully with auto-generated password sent to email",
+      });
+      setErrorMessage(null);
+      setFormData({ email: '', name: '' });
+      setIsCreateOpen(false);
+      fetchTenants();
+    } else {
+      const msg = result.error || "Failed to create tenant";
+      setErrorMessage(msg);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "An unexpected error occurred",
+        description: msg,
       });
-    } finally {
-      setIsCreating(false);
     }
-  };
+  } catch (error) {
+    toast({
+      variant: "destructive",
+      title: "Error",
+      description: "An unexpected error occurred",
+    });
+  } finally {
+    setIsCreating(false);
+  }
+};
 
   const deleteTenant = async (tenantId: string) => {
     if (!confirm('Are you sure you want to delete this tenant? This action cannot be undone.')) {
@@ -246,6 +251,10 @@ export default function ManageTenantsPage() {
                 />
               </div>
               {/* REMOVED PASSWORD FIELD */}
+              {errorMessage && (
+  <p className="text-red-600 text-sm mt-2">{errorMessage}</p>
+)}
+
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateOpen(false)}>

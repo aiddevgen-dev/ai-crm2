@@ -120,12 +120,12 @@ localStorage.setItem('user_email', result.user.email);
                 />
               </div>
               <div className="flex items-center justify-end">
-                <Link
+                {/* <Link
                   href="/tenant-auth/forgot-password"
                   className="text-sm text-muted-foreground hover:text-primary underline underline-offset-4"
                 >
                   Forgot your password?
-                </Link>
+                </Link> */}
               </div>
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
@@ -139,7 +139,7 @@ localStorage.setItem('user_email', result.user.email);
 
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">
-                  Need help? Contact your administrator
+                  Need help? Contact your administrator from mail you received
                 </p>
               </div>
             </CardFooter>
