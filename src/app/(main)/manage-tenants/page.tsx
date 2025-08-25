@@ -28,7 +28,7 @@ export default function ManageTenantsPage() {
   const [loading, setLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-  const [formData, setFormData] = useState({ email: '', password: '' , name: '' });
+  const [formData, setFormData] = useState({ email: '', name: '' }); // REMOVED password
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -65,11 +65,12 @@ export default function ManageTenantsPage() {
   };
 
   const createTenant = async () => {
-    if (!formData.email.trim() || !formData.password.trim()) {
+    // UPDATED VALIDATION - Only check email and name
+    if (!formData.email.trim()) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Email and password are required",
+        description: "Email is required",
       });
       return;
     }
@@ -93,14 +94,7 @@ export default function ManageTenantsPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Password must be at least 6 characters long",
-      });
-      return;
-    }
+    // REMOVED password validation
 
     setIsCreating(true);
     try {
@@ -119,10 +113,10 @@ export default function ManageTenantsPage() {
       if (response.ok) {
         toast({
           title: "Success",
-          description: "Tenant created successfully and welcome email sent",
+          description: "Tenant created successfully with auto-generated password sent to email",
         });
         
-        setFormData({ email: '', password: '', name: '' });
+        setFormData({ email: '', name: '' }); // REMOVED password reset
         setIsCreateOpen(false);
         fetchTenants();
       } else {
@@ -227,7 +221,7 @@ export default function ManageTenantsPage() {
             <DialogHeader>
               <DialogTitle>Create New Tenant</DialogTitle>
               <DialogDescription>
-                Add a new tenant account. An email with credentials will be sent to the provided email address.
+                Add a new tenant account. A secure password will be auto-generated and emailed with credentials.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -251,16 +245,7 @@ export default function ManageTenantsPage() {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter password (min 6 characters)"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                />
-              </div>
+              {/* REMOVED PASSWORD FIELD */}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
@@ -322,58 +307,58 @@ export default function ManageTenantsPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="space-y-">
-  <div className="flex items-center justify-between">
-    <span className="text-sm">
-      <span className="text-muted-foreground">Name:</span> {tenant.name}
-    </span>
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => copyToClipboard(tenant.name, `name-${tenant._id}`)}
-    >
-      {copiedField === `name-${tenant._id}` ? (
-        <Check className="h-3 w-3" />
-      ) : (
-        <Copy className="h-3 w-3" />
-      )}
-    </Button>
-  </div>
-  
-  <div className="flex items-center justify-between">
-    <span className="text-sm">
-      <span className="text-muted-foreground">Email:</span> {tenant.email}
-    </span>
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => copyToClipboard(tenant.email, `email-${tenant._id}`)}
-    >
-      {copiedField === `email-${tenant._id}` ? (
-        <Check className="h-3 w-3" />
-      ) : (
-        <Copy className="h-3 w-3" />
-      )}
-    </Button>
-  </div>
-  
-  <div className="flex items-center justify-between">
-    <span className="text-sm">
-      <span className="text-muted-foreground">Tenant ID:</span> {tenant.tenant_id}
-    </span>
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={() => copyToClipboard(tenant.tenant_id, `id-${tenant._id}`)}
-    >
-      {copiedField === `id-${tenant._id}` ? (
-        <Check className="h-3 w-3" />
-      ) : (
-        <Copy className="h-3 w-3" />
-      )}
-    </Button>
-  </div>
-</div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">Name:</span> {tenant.name}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(tenant.name, `name-${tenant._id}`)}
+                    >
+                      {copiedField === `name-${tenant._id}` ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">Email:</span> {tenant.email}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(tenant.email, `email-${tenant._id}`)}
+                    >
+                      {copiedField === `email-${tenant._id}` ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm">
+                      <span className="text-muted-foreground">Tenant ID:</span> {tenant.tenant_id}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(tenant.tenant_id, `id-${tenant._id}`)}
+                    >
+                      {copiedField === `id-${tenant._id}` ? (
+                        <Check className="h-3 w-3" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
                 <div className="flex justify-between items-center pt-2 border-t">
                   <p className="text-xs text-muted-foreground">
                     Created {new Date(tenant.created_at).toLocaleDateString()}

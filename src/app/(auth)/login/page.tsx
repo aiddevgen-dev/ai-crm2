@@ -27,7 +27,7 @@ export default function LoginPage() {
 
   try {
     const result = await apiClient.login({ email, password });
-    
+    console.log('Login result:', result);
     if (result.success) {
       toast({
         title: "Success",

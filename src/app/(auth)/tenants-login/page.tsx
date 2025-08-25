@@ -41,9 +41,9 @@ export default function TenantLoginPage() {
         localStorage.setItem('auth_token', result.token);
         localStorage.setItem('tenant_info', JSON.stringify(result.tenant));
         // Store user info in the same format as admin login
-localStorage.setItem('user_id', result.tenant.tenant_id);
-localStorage.setItem('tenant_id', result.tenant.tenant_id);
-localStorage.setItem('user_email', result.tenant.email);
+localStorage.setItem('user_id', result.user.tenant_id);
+localStorage.setItem('tenant_id', result.user.tenant_id);
+localStorage.setItem('user_email', result.user.email);
         
         toast({
           title: "Welcome!",
@@ -51,7 +51,7 @@ localStorage.setItem('user_email', result.tenant.email);
         });
         
         // Redirect to tenant dashboard
-        window.location.href = '/dashboard';
+        window.location.href = '/tenant-dashboard';
       } else {
         toast({
           variant: "destructive",

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiClient, User } from '@/lib/api';
 
@@ -21,28 +21,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isAuthenticated = !!user;
 
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
-    try {
-      if (apiClient.isAuthenticated()) {
-        const response = await apiClient.getCurrentUser();
-        if (response.success && response.data?.user) {
-          setUser(response.data.user);
-        } else {
-          // Token is invalid, clear it
-          apiClient.logout();
+  const checkAuthStatus = useCallback(async () => {
+  try {
+    if (apiClient.isAuthenticated()) {
+      const response = await apiClient.getCurrentUser();
+      if (response.success && response.data?.user) {
+        setUser(response.data.user);
+        
+        // Only redirect if NOT already on tenant dashboard
+        const token = apiClient.getAuthToken();
+        if (token && window.location.pathname !== '/tenant-dashboard') {
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.role === 'tenant') {
+              router.push('/tenant-dashboard');
+              return;
+            }
+          } catch {}
         }
+      } else {
+        apiClient.logout();
       }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      apiClient.logout();
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (error) {
+    console.error('Auth check failed:', error);
+    apiClient.logout();
+  } finally {
+    setLoading(false);
+  }
+}, [router]);
+
+useEffect(() => {
+  checkAuthStatus();
+}, [checkAuthStatus]);
 
   const login = async (email: string, password: string) => {
     try {

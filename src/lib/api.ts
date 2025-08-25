@@ -42,6 +42,7 @@ interface User {
   tenant_id: string;
   created_at?: string;
   status?: string;
+  role?: 'admin' | 'tenant';  // ADD THIS LINE
 }
 
 interface LoginResponse {
@@ -85,7 +86,7 @@ class ApiClient {
     }
   }
 
-  private getAuthToken(): string | null {
+  public getAuthToken(): string | null {
   if (typeof window === 'undefined') return null;
   
   // Try localStorage first, fallback to cookie
@@ -227,7 +228,8 @@ class ApiClient {
               email: tenantData.email,
               tenant_id: tenantData.tenant_id,
               status: tenantData.status,
-              created_at: tenantData.created_at
+              created_at: tenantData.created_at,
+              role: 'tenant'  // ADD THIS LINE
             }
           }
         };
