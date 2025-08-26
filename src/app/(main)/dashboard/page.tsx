@@ -59,7 +59,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
       {/* Welcome Section */}
       <div>
-        <h2 className="text-4xl font-bold tracking-tight">Welcome back!</h2>
+        <h2 className="text-4xl font-bold tracking-tight">Welcome Admin</h2>
         <p className="text-lg text-muted-foreground mt-2">
           Here&apos;s what&apos;s happening with your account today.
         </p>
@@ -69,7 +69,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Account Status</CardTitle>
+            <CardTitle className="text-sm font-medium">Admin Status</CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -134,7 +134,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Account Information</CardTitle>
+            <CardTitle>Admin&apos;s Information</CardTitle>
             <CardDescription>
               Your personal account details and preferences
             </CardDescription>
@@ -163,7 +163,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>Organization Details</CardTitle>
             <CardDescription>
@@ -189,7 +189,7 @@ export default function DashboardPage() {
               </p>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
 
       {/* Quick Actions */}

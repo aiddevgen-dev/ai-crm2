@@ -1,265 +1,259 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar, Clock, User } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-interface Appointment {
-  _id: string;
-  title: string;
-  description: string;
-  scheduled_at: string;
-  status: string;
-  created_at: string;
-}
-const API_BASE_URL = process.env.NODE_ENV === 'production'
-  ? 'https://ai-crm2-backend2.onrender.com'
-  : 'http://127.0.0.1:5000';
-export default function AppointmentsPage() {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const [formData, setFormData] = useState({ 
-    title: '', 
-    description: '', 
-    scheduled_at: '' 
-  });
+const API_BASE_URL =
+  process.env.NODE_ENV === 'production'
+    ? 'https://ai-crm2-backend2.onrender.com'
+    : 'http://127.0.0.1:5000';
+
+type GEvent = {
+  id?: string;
+  summary?: string;
+  description?: string;
+  start?: { dateTime?: string; date?: string };
+  end?: { dateTime?: string; date?: string };
+};
+
+export default function CalendarIntegrationPage() {
   const { toast } = useToast();
 
+  const [integrated, setIntegrated] = useState<boolean>(false);
+  const [calendarEmail, setCalendarEmail] = useState<string>('');
+  const [loadingStatus, setLoadingStatus] = useState<boolean>(true);
+
+  const [events, setEvents] = useState<GEvent[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState<boolean>(false);
+
+  const token = useMemo(() => (typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null), []);
+
+  // 1) On mount: check integration; if integrated, fetch events
   useEffect(() => {
-    fetchAppointments();
+    (async () => {
+      await checkStatus();
+      // Optionally auto-refresh after OAuth success flag in URL (?calendar_integrated=success)
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('calendar_integrated') === 'success') {
+          // Clear the flag from URL for cleanliness
+          params.delete('calendar_integrated');
+          const newUrl =
+            window.location.pathname + (params.toString() ? `?${params.toString()}` : '');
+          window.history.replaceState({}, '', newUrl);
+          toast({ title: 'Google Calendar connected', description: 'Fetching your events…' });
+          await fetchEvents();
+        }
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchAppointments = async () => {
+  const checkStatus = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${API_BASE_URL}/api/appointments`, {
+      setLoadingStatus(true);
+      const res = await fetch(`${API_BASE_URL}/auth/google/calendar/status`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token ?? ''}`,
         },
+        credentials: 'include',
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setAppointments(data.appointments || []);
+      if (!res.ok) throw new Error('Failed to check status');
+
+      const data = await res.json();
+      setIntegrated(!!data.integrated);
+      setCalendarEmail(data.email || '');
+
+      if (data.integrated) {
+        await fetchEvents();
+      } else {
+        setEvents([]);
       }
-    } catch (error) {
-      console.error('Error fetching appointments:', error);
+    } catch (e) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not check integration.' });
     } finally {
-      setLoading(false);
+      setLoadingStatus(false);
     }
   };
 
-  const createAppointment = async () => {
-    if (!formData.title.trim() || !formData.scheduled_at) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Title and scheduled time are required",
+  const fetchEvents = async () => {
+    try {
+      setLoadingEvents(true);
+      const res = await fetch(`${API_BASE_URL}/auth/google/calendar/events`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token ?? ''}`,
+        },
+        credentials: 'include',
       });
+
+      // Backend returns whole Calendar API payload; normalize to items[]
+      const json = await res.json();
+      if (!res.ok) {
+        const msg = json?.error || 'Failed to fetch Google Calendar events';
+        throw new Error(msg);
+      }
+
+      const items: GEvent[] = Array.isArray(json?.items) ? json.items : [];
+      setEvents(items);
+    } catch (e: unknown) {
+      const errorMessage =
+        typeof e === 'object' && e !== null && 'message' in e
+          ? (e as { message?: string }).message
+          : 'Could not fetch events.';
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: errorMessage,
+      });
+      setEvents([]);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
+  const startIntegration = () => {
+    if (!token) {
+      toast({ variant: 'destructive', title: 'Not signed in', description: 'Please log in first.' });
       return;
     }
+    // Open the OAuth flow in the same tab (or use window.open for a popup)
+    // Requires tiny backend fallback: accept ?token= to authenticate this redirect-init.
+    const url = `${API_BASE_URL}/auth/google/calendar/integrate?token=${encodeURIComponent(token)}`;
+    window.location.href = url;
+  };
 
-    setIsCreating(true);
+  const disconnect = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
-      const response = await fetch(`${API_BASE_URL}/api/appointments`, {
+      const res = await fetch(`${API_BASE_URL}/auth/google/calendar/disconnect`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token ?? ''}`,
         },
-        body: JSON.stringify(formData),
+        credentials: 'include',
       });
 
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Appointment scheduled successfully",
-        });
-        setFormData({ title: '', description: '', scheduled_at: '' });
-        setIsCreateOpen(false);
-        fetchAppointments();
-      } else {
-        const error = await response.json();
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: error.error || "Failed to create appointment",
-        });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || 'Failed to disconnect');
       }
-    } catch (error) {
+
+      toast({ title: 'Disconnected', description: 'Google Calendar has been disconnected.' });
+      setIntegrated(false);
+      setCalendarEmail('');
+      setEvents([]);
+    } catch (e: unknown) {
+      const errorMessage =
+        typeof e === 'object' && e !== null && 'message' in e
+          ? (e as { message?: string }).message
+          : 'Could not disconnect.';
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: "An unexpected error occurred",
+        variant: 'destructive',
+        title: 'Error',
+        description: errorMessage,
       });
-    } finally {
-      setIsCreating(false);
     }
   };
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-    </div>;
-  }
+  const formatWhen = (ev: GEvent) => {
+    const start = ev.start?.dateTime || ev.start?.date;
+    if (!start) return 'No start time';
+    const d = new Date(start);
+    return isNaN(d.getTime()) ? start : d.toLocaleString();
+    // (You can format better if you like.)
+  };
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-4xl font-bold tracking-tight">Appointments</h1>
-          <p className="text-lg text-muted-foreground mt-2">
-            Schedule and manage your client meetings and calls
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">Calendar</h1>
+          <p className="text-muted-foreground mt-1">Connect your Google Calendar and view upcoming events.</p>
         </div>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button >
-              <Plus className="mr-2 h-4 w-4" />
-              New Appointment
+
+        <div className="flex items-center gap-2">
+          {loadingStatus ? (
+            <Button disabled>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Checking…
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Schedule New Appointment</DialogTitle>
-              <DialogDescription>
-                Create a new meeting or call appointment.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  placeholder="Enter appointment title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  placeholder="Enter appointment description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="scheduled_at">Scheduled Time</Label>
-                <Input
-                  id="scheduled_at"
-                  type="datetime-local"
-                  value={formData.scheduled_at}
-                  onChange={(e) => setFormData({ ...formData, scheduled_at: e.target.value })}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-                Cancel
+          ) : integrated ? (
+            <>
+              <Badge variant="default">Connected</Badge>
+              {calendarEmail && (
+                <span className="text-xs text-muted-foreground">as {calendarEmail}</span>
+              )}
+              <Button variant="outline" onClick={fetchEvents} disabled={loadingEvents}>
+                {loadingEvents ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Refreshing
+                  </>
+                ) : (
+                  <>
+                    <RefreshCcw className="mr-2 h-4 w-4" /> Refresh
+                  </>
+                )}
               </Button>
-              <Button onClick={createAppointment} disabled={isCreating}>
-                {isCreating ? "Scheduling..." : "Schedule Appointment"}
+              <Button variant="destructive" onClick={disconnect}>
+                Disconnect
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </>
+          ) : (
+            <Button onClick={startIntegration}>Integrate Google Calendar</Button>
+          )}
+        </div>
       </div>
 
-      {/* Stats */}
       <div className="grid gap-6 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Appointments</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Events Loaded</CardTitle>
+            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{appointments.length}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {appointments.filter(apt => 
-                new Date(apt.scheduled_at).toDateString() === new Date().toDateString()
-              ).length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Scheduled</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {appointments.filter(apt => apt.status === 'scheduled').length}
-            </div>
+            <div className="text-3xl font-bold">{events.length}</div>
+            <p className="text-xs text-muted-foreground">From your primary Google Calendar</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Appointments List */}
       <Card>
         <CardHeader>
-          <CardTitle>Upcoming Appointments</CardTitle>
-          <CardDescription>Your scheduled meetings and calls</CardDescription>
+          <CardTitle>Upcoming Events</CardTitle>
+          <CardDescription>Your next events from Google Calendar</CardDescription>
         </CardHeader>
         <CardContent>
-          {appointments.length > 0 ? (
-            <div className="space-y-4">
-              {appointments.map((appointment) => (
-                <div key={appointment._id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Calendar className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium">{appointment.title}</h3>
-                      <p className="text-sm text-muted-foreground">{appointment.description}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(appointment.scheduled_at).toLocaleString()}
-                      </p>
-                    </div>
+          {loadingEvents ? (
+            <div className="flex justify-center py-10">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : !integrated ? (
+            <p className="text-sm text-muted-foreground">Connect Google Calendar to see events.</p>
+          ) : events.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No events found.</p>
+          ) : (
+            <div className="space-y-3">
+              {events.map((ev, idx) => (
+                <div
+                  key={ev.id ?? `${idx}-${ev.summary ?? 'event'}`}
+                  className="flex items-start justify-between rounded-lg border p-4"
+                >
+                  <div className="space-y-1">
+                    <div className="font-medium">{ev.summary || '(No title)'}</div>
+                    {ev.description && (
+                      <div className="text-sm text-muted-foreground line-clamp-2">{ev.description}</div>
+                    )}
+                    <div className="text-xs text-muted-foreground">{formatWhen(ev)}</div>
                   </div>
-                  <Badge variant={appointment.status === 'scheduled' ? 'default' : 'secondary'}>
-                    {appointment.status}
-                  </Badge>
                 </div>
               ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No appointments scheduled</h3>
-              <p className="text-muted-foreground mb-4">
-                Start scheduling meetings with your prospects and clients
-              </p>
-              <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                <DialogTrigger asChild>
-                  <Button size="lg">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Schedule Appointment
-                  </Button>
-                </DialogTrigger>
-              </Dialog>
             </div>
           )}
         </CardContent>

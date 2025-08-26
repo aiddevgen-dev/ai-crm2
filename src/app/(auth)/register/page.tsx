@@ -62,7 +62,7 @@ export default function RegisterPage() {
           description: response.error || "Failed to create account. Please try again.",
         });
       }
-    } catch (error) {
+    } catch {
       toast({
         variant: "destructive",
         title: "Error",

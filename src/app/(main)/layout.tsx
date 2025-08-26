@@ -51,9 +51,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
                   {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                 </Button>
                 
-                <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
-                  Multi-Tenant CRM
-                </h1>
+                <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight text-gray-900">
+                Outbound Calling
+              </h1>
+
               </div>
               
               <div className="flex items-center space-x-4">
