@@ -38,42 +38,41 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
           {/* Header */}
-          <header className="bg-white shadow-md border-b-2 border-gray-200 h-20 flex-shrink-0">
-            <div className="flex justify-between items-center h-full px-4 lg:px-8">
-              <div className="flex items-center space-x-4">
-                {/* Mobile menu button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSidebarOpen(!sidebarOpen)}
-                  className="lg:hidden"
-                >
-                  {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                </Button>
-                
-                <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight text-gray-900">
-                Outbound Calling
-              </h1>
-
-              </div>
-              
-              <div className="flex items-center space-x-4">
-                <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
-                  <User className="h-4 w-4" />
-                  <span>{user?.email}</span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={logout}
-                  className="flex items-center space-x-2"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span className="hidden sm:inline">Logout</span>
-                </Button>
-              </div>
-            </div>
-          </header>
+<header className="bg-white shadow-sm border-b border-slate-200 h-20 flex-shrink-0">
+  <div className="flex justify-between items-center h-full px-4 lg:px-8">
+    <div className="flex items-center space-x-4">
+      {/* Mobile menu button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="lg:hidden hover:bg-slate-100"
+      >
+        {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+      </Button>
+      
+      <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-800">
+        Welcome  Admin
+      </h1>
+    </div>
+    
+    <div className="flex items-center space-x-4">
+      <div className="hidden sm:flex items-center space-x-2 text-sm text-slate-600">
+        <User className="h-4 w-4" />
+        <span>{user?.email}</span>
+      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={logout}
+        className="flex items-center space-x-2 border-slate-300 text-slate-700 hover:bg-slate-100"
+      >
+        <LogOut className="h-4 w-4" />
+        <span className="hidden sm:inline">Logout</span>
+      </Button>
+    </div>
+  </div>
+</header>
 
           {/* Main content area */}
           <main className="flex-1 overflow-y-auto p-4 lg:p-8">
